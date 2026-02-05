@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -15,9 +15,61 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { AuthModal } from '@/components/AuthModal'
+import { CartSheet } from '@/components/CartSheet'
+import { useToast } from '@/hooks/use-toast'
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('catalog')
+  const [authModalOpen, setAuthModalOpen] = useState(false)
+  const [cartOpen, setCartOpen] = useState(false)
+  const [user, setUser] = useState<any>(null)
+  const { toast } = useToast()
+
+  useEffect(() => {
+    const userId = localStorage.getItem('userId')
+    const userEmail = localStorage.getItem('userEmail')
+    if (userId && userEmail) {
+      setUser({ id: userId, email: userEmail })
+    }
+  }, [])
+
+  const handleAddToCart = async (productId: number) => {
+    if (!user) {
+      toast({
+        title: 'Требуется авторизация',
+        description: 'Войдите, чтобы добавить товар в корзину',
+        variant: 'destructive',
+      })
+      setAuthModalOpen(true)
+      return
+    }
+
+    try {
+      const response = await fetch('https://functions.poehali.dev/71ed6a81-59be-4417-9788-a26c2747e5c5', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user.id,
+          product_id: productId,
+          quantity: 1,
+        }),
+      })
+
+      if (response.ok) {
+        toast({
+          title: 'Добавлено в корзину',
+          description: 'Товар успешно добавлен',
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось добавить товар',
+        variant: 'destructive',
+      })
+    }
+  }
 
   const categories = [
     { icon: 'Send', name: 'Telegram каналы', count: 156 },
@@ -132,7 +184,7 @@ const Index = () => {
               <Icon name="ShoppingBag" size={18} />
               Мои покупки
             </Button>
-            <Button variant="ghost" className="gap-2">
+            <Button variant="ghost" className="gap-2" onClick={() => window.location.href = '/my-shop'}>
               <Icon name="Store" size={18} />
               Мой магазин
             </Button>
@@ -143,13 +195,23 @@ const Index = () => {
               <Icon name="MessageSquare" size={20} />
               <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive"></span>
             </Button>
+            <Button variant="ghost" size="icon" onClick={() => user ? setCartOpen(true) : setAuthModalOpen(true)}>
+              <Icon name="ShoppingCart" size={20} />
+            </Button>
             <Button variant="ghost" size="icon">
               <Icon name="Wallet" size={20} />
             </Button>
-            <Button variant="default" className="gap-2">
-              <Icon name="User" size={18} />
-              Войти
-            </Button>
+            {user ? (
+              <Button variant="default" className="gap-2">
+                <Icon name="User" size={18} />
+                {user.email}
+              </Button>
+            ) : (
+              <Button variant="default" className="gap-2" onClick={() => setAuthModalOpen(true)}>
+                <Icon name="User" size={18} />
+                Войти
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -165,7 +227,7 @@ const Index = () => {
               <Icon name="Search" size={20} />
               Найти товар
             </Button>
-            <Button size="lg" variant="outline" className="gap-2 border-white text-white hover:bg-white/10">
+            <Button size="lg" variant="outline" className="gap-2 border-white text-white hover:bg-white/10" onClick={() => window.location.href = '/my-shop'}>
               <Icon name="Plus" size={20} />
               Продать товар
             </Button>
@@ -255,7 +317,7 @@ const Index = () => {
                           {product.price.toLocaleString('ru-RU')} ₽
                         </span>
                       </div>
-                      <Button className="gap-2">
+                      <Button className="gap-2" onClick={() => handleAddToCart(product.id)}>
                         <Icon name="ShoppingCart" size={18} />
                         Купить
                       </Button>
@@ -382,6 +444,18 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      <AuthModal 
+        open={authModalOpen} 
+        onOpenChange={setAuthModalOpen}
+        onAuthSuccess={(userData) => setUser(userData)}
+      />
+      
+      <CartSheet 
+        open={cartOpen}
+        onOpenChange={setCartOpen}
+        userId={user?.id || null}
+      />
     </div>
   )
 }

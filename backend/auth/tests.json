@@ -1,0 +1,22 @@
+{
+  "tests": [
+    {
+      "name": "Register and verify new user",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "action": "register",
+        "email": "testuser@nevemarket.com",
+        "password": "securepass123",
+        "full_name": "Test User"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "message": "string",
+        "user": "object",
+        "verification_code": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

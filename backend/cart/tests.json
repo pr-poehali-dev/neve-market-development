@@ -1,0 +1,15 @@
+{
+  "tests": [
+    {
+      "name": "Get empty cart",
+      "method": "GET",
+      "path": "/?user_id=999",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "cart": "array",
+        "total": "number"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
